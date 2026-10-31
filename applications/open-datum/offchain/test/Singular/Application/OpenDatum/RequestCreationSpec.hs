@@ -38,6 +38,7 @@ import Singular.Application.OpenDatum.RequestWorld
     , outputsOf
     , tokenQuantity
     , txInOf
+    , validityOf
     )
 import Singular.Application.OpenDatum.Requests.Configuration
     ( configurationCreate
@@ -111,6 +112,17 @@ spec = do
                     world <- newCreation >>= withPublicScripts
                     (tx, _) <- createRegistry world >>= either (fail . show) pure
                     soundnessProblems world tx `shouldReturn` []
+
+    describe "the creation carries the window the cleanup carries" $ do
+        it
+            "ends an hour past the tip, by the session's own conversion, and both validators still accept it"
+            $ do
+                world <- newCreation >>= withPublicScripts
+                (tx, _) <- createRegistry world >>= either (fail . show) pure
+                (now, later) <- withSession world hourPastTip
+                later `shouldSatisfy` (> now)
+                snd (validityOf tx) `shouldBe` Just later
+                judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
 
     describe "the two validators judge the same transaction" $ do
         it

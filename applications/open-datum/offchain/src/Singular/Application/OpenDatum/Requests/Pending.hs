@@ -37,10 +37,13 @@ import Singular.Application.OpenDatum.Requests.Assemble
     , assembleTransaction
     , holdsOnly
     , inlineDatumOf
+    , noUsableWindow
     , readOutputs
     , resolvePayer
     , tipSlot
+    , usualSpan
     , validityFromTip
+    , windowFromTip
     )
 import Singular.Application.OpenDatum.Requests.Records
     ( AsData (..)
@@ -73,7 +76,6 @@ import Singular.Registry.LedgerProvider
 import Singular.Registry.SessionIO
     ( ceilingSlot
     , floorSlot
-    , slotStart
     )
 
 {- | A pending registration read from the chain: the output, the
@@ -160,13 +162,9 @@ buildCleanup session script pending payerAddress = runExceptT $ do
     now <- lift (tipSlot session)
     opens <- lift (ceilingSlot session (rdReclaimEnd registration))
     when (now < opens) $ throwE (WindowNotOpen Cleanup)
-    nowMs <- lift (slotStart session now)
-    span' <- lift (floorSlot session (nowMs + cleanupSpan))
-    upper <-
-        lift (validityFromTip session now span')
-            >>= maybe
-                (throwE (BuildFailed "no validity interval at the tip is usable"))
-                pure
+    (_, upper) <-
+        lift (windowFromTip session usualSpan)
+            >>= maybe (throwE (BuildFailed noUsableWindow)) pure
     scriptOutputs <- ExceptT (referenceOutputs session script)
     let funding = payerFunding payer
     ExceptT $
@@ -187,10 +185,6 @@ buildCleanup session script pending payerAddress = runExceptT $ do
                 Tx.validTo upper
                 Tx.collateral (fst funding)
             )
-
--- | How long a cleanup stays valid from the tip, in milliseconds.
-cleanupSpan :: Integer
-cleanupSpan = 3_600_000
 
 -- | Burn the approval a pending registration holds.
 burnApproval :: RequestScript -> Held -> Tx.TxBuild q e ()

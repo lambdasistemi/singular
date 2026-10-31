@@ -117,6 +117,7 @@ import Singular.State.Assemble
     , readOutputs
     , resolvePayer
     , tipSlot
+    , usualSpan
     , validityFromTip
     )
 import Singular.State.Batch
@@ -518,7 +519,7 @@ processingWindow
     -> [Registration]
     -> ExceptT Refusal IO SlotNo
 processingWindow session now registrations = do
-    fallback <- (+ 3600000) <$> liftIO (slotStart session now)
+    fallback <- (+ usualSpan) <$> liftIO (slotStart session now)
     deadline <-
         liftIO
             (floorSlot session (minimum (fallback : map regDeadline registrations)))

@@ -19,7 +19,7 @@ module Singular.State.Publication
     ) where
 
 import Control.Exception (throwIO)
-import Control.Monad.Except (ExceptT (..), runExceptT)
+import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
 import Control.Monad.IO.Class (liftIO)
 import Data.List (minimumBy, nubBy)
 import Data.Maybe (catMaybes)
@@ -58,8 +58,11 @@ import Singular.Registry.SessionIO (parameters)
 import Singular.State.Assemble
     ( Payer (..)
     , assembleTransaction
+    , noUsableWindow
     , readOutputs
     , resolvePayerReserving
+    , usualSpan
+    , windowFromTip
     )
 import Singular.State.Refusal (Refusal (..))
 
@@ -183,6 +186,9 @@ publish
 publish reserved session payerAddress missing = runExceptT $ do
     payer <- ExceptT (resolvePayerReserving reserved session payerAddress)
     protocol <- liftIO (parameters session)
+    upper <-
+        liftIO (windowFromTip session usualSpan)
+            >>= maybe (throwError (BuildFailed noUsableWindow)) (pure . snd)
     let holders = map (holder protocol payerAddress) missing
     tx <-
         ExceptT $
@@ -191,7 +197,10 @@ publish reserved session payerAddress missing = runExceptT $ do
                 [payerFunding payer]
                 []
                 payerAddress
-                (mapM_ Tx.output holders >> Tx.checkTxSize protocol)
+                ( mapM_ Tx.output holders
+                    >> Tx.validTo upper
+                    >> Tx.checkTxSize protocol
+                )
     pure (Publication tx (located tx))
   where
     located tx =

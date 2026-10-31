@@ -5,9 +5,11 @@ License     : Apache-2.0
 
 The genesis transaction spends a seed, mints the one state token named from
 it and creates the one state output that holds the token, at the address of the
-state script, with the empty root. The application adds its own steps to the
-same transaction (for open datum, the registry's configuration record), and the
-registry the transaction creates is returned with it.
+state script, with the empty root. It ends an hour from the tip, so that a
+creation the chain never took can be proved excluded. The application adds its
+own steps to the same transaction (for open datum, the registry's
+configuration record), and the registry the transaction creates is returned
+with it.
 -}
 module Singular.State.Genesis
     ( buildGenesis
@@ -41,7 +43,10 @@ import Singular.State.Assemble
     ( Payer (..)
     , Program
     , assembleTransaction
+    , noUsableWindow
     , resolvePayer
+    , usualSpan
+    , windowFromTip
     )
 import Singular.State.Preimage (stateTokenName)
 import Singular.State.Records (genesisRedeemer, stateDatum)
@@ -83,6 +88,9 @@ buildGenesis session script seed payerAddress applicationReferences application 
         maybe (throwError (SeedNotAtPayer seed)) pure (lookup seed owned)
     scriptOutputs <-
         ExceptT (referenceOutputs session (ssScript script) (ssSource script))
+    upper <-
+        liftIO (windowFromTip session usualSpan)
+            >>= maybe (throwError (BuildFailed noUsableWindow)) (pure . snd)
     let name = stateTokenName seed
         policy = statePolicy script
         registry =
@@ -114,6 +122,7 @@ buildGenesis session script seed payerAddress applicationReferences application 
                         (BuiltinData (genesisRedeemer seed))
                     useScript (ssScript script) (ssSource script)
                     application registry
+                    Tx.validTo upper
                     Tx.collateral (fst funding)
                 )
     pure (tx, registry)

@@ -26,6 +26,7 @@ import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.TxIn (TxIn (..))
 
 import Singular.Application.OpenDatum.CreationWorld
+import Singular.Application.OpenDatum.RequestWorld (validityOf)
 import Singular.Application.OpenDatum.Requests.Script
     ( RequestScript (..)
     , ScriptSource (..)
@@ -80,6 +81,24 @@ spec = do
                 sort (map fst both) `shouldBe` sort (wanted world)
                 sort [ref | (_, (ref, _)) <- both]
                     `shouldBe` sort (map snd (stateLocated <> requestLocated))
+
+    describe "each publication carries the window the cleanup carries" $ do
+        it
+            "ends an hour past the tip, by the session's own conversion, so it can be proved excluded"
+            $ do
+                world <- newCreation
+                References{referencesLive = _, referencesPublication = first} <-
+                    planned world
+                Publication stateTx _ <- expectPublication first
+                (now, later) <- withSession world hourPastTip
+                later `shouldSatisfy` (> now)
+                snd (validityOf stateTx) `shouldBe` Just later
+                applyTx world stateTx
+                References{referencesLive = _, referencesPublication = second} <-
+                    planned world
+                Publication requestTx _ <- expectPublication second
+                (_, laterStill) <- withSession world hourPastTip
+                snd (validityOf requestTx) `shouldBe` Just laterStill
 
     describe "a later registry of open datum" $ do
         it

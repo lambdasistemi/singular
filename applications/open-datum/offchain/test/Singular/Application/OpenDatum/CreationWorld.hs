@@ -23,6 +23,7 @@ module Singular.Application.OpenDatum.CreationWorld
     , withSession
     , applyTx
     , setSlot
+    , hourPastTip
     , Purpose (..)
     , judge
     , everyScriptAccepts
@@ -90,6 +91,7 @@ import Data.ByteString (ByteString)
 import Singular.Registry.LedgerProvider
     ( OutputQuery (..)
     , Session (..)
+    , TipObservation (..)
     )
 
 import Data.Set qualified as Set
@@ -134,7 +136,13 @@ import Singular.Registry.RawChainFixture
     , rawChainProvider
     , recordTransaction
     )
-import Singular.Registry.SessionIO (evaluateTx, withLatest)
+import Singular.Registry.SessionIO
+    ( evaluateTx
+    , floorSlot
+    , slotStart
+    , tip
+    , withLatest
+    )
 import Singular.Registry.SyntheticLedger (withSyntheticCosts)
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TrieState (RegistryIdentity)
@@ -247,6 +255,17 @@ withPublicScripts world = do
 -- | Acquire one session of the chain and use it.
 withSession :: Creation -> (Session NoWitness IO -> IO a) -> IO a
 withSession world = withLatest (rawChainProvider (crChain world))
+
+{- | The tip, and the slot an hour past it, read from the session's own time
+conversion: the end of the window a transaction with no window of its own is
+given.
+-}
+hourPastTip :: Session NoWitness IO -> IO (SlotNo, SlotNo)
+hourPastTip session = do
+    now <- observedSlot <$> tip session
+    startMs <- slotStart session now
+    later <- floorSlot session (startMs + 3_600_000)
+    pure (now, later)
 
 -- | Move the tip to a slot.
 setSlot :: Creation -> Word -> IO ()

@@ -55,8 +55,7 @@ import Singular.Application.OpenDatum.Requests.Assemble
     , inlineDatumOf
     , readOutputs
     , resolvePayer
-    , tipSlot
-    , validityFromTip
+    , windowFromTip
     )
 import Singular.Application.OpenDatum.Requests.Records
     ( AsData (..)
@@ -84,7 +83,7 @@ import Singular.Registry.LedgerProvider
     ( OutputQuery (..)
     , Session
     )
-import Singular.Registry.SessionIO (floorSlot, parameters, slotStart)
+import Singular.Registry.SessionIO (parameters, slotStart)
 import Singular.Registry.TrieState
     ( RegistryIdentity (..)
     , StatePolicyId (..)
@@ -254,13 +253,10 @@ bookingWindow
     :: Session NoWitness IO
     -> Integer
     -> IO (Either Refusal (SlotNo, SlotNo, Integer))
-bookingWindow session width = do
-    now <- tipSlot session
-    nowMs <- slotStart session now
-    wanted <- floorSlot session (nowMs + width)
-    validityFromTip session now wanted >>= \case
+bookingWindow session width =
+    windowFromTip session width >>= \case
         Nothing -> pure (Left (BookingWidthTooNarrow width))
-        Just upper -> do
+        Just (now, upper) -> do
             upperMs <- slotStart session upper
             pure (Right (now, upper, upperMs))
 

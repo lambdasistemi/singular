@@ -50,6 +50,8 @@ module Singular.State.StateWorld
     , World
     , worldChain
     , newWorld
+    , newWorldOver
+    , shortTime
     , withSession
     , applyTx
     , setSlot
@@ -95,6 +97,9 @@ module Singular.State.StateWorld
     , validityOf
     , redeemersOf
     , feeOf
+
+      -- * Time
+    , hourPastTip
 
       -- * Changing a built transaction
     , mapOutput
@@ -209,7 +214,9 @@ import Singular.Registry.Ledger (ConwayEra, Root (..), TxOut)
 import Singular.Registry.LedgerProvider
     ( OutputQuery (..)
     , Session (..)
+    , TipObservation (..)
     )
+import Singular.Registry.NetworkTime (NetworkTime)
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , RawChain
@@ -219,14 +226,23 @@ import Singular.Registry.RawChainFixture
     , rawChainProvider
     , recordTransaction
     )
-import Singular.Registry.SessionIO (evaluateTx, withLatest)
+import Singular.Registry.SessionIO
+    ( evaluateTx
+    , floorSlot
+    , slotStart
+    , tip
+    , withLatest
+    )
 import Singular.Registry.SyntheticLedger
     ( errorProgram
     , paddedProgram
     , unitProgram
     , withSyntheticCosts
     )
-import Singular.Registry.SyntheticTime (syntheticTime)
+import Singular.Registry.SyntheticTime
+    ( syntheticTime
+    , syntheticTimeWith
+    )
 import Singular.Registry.Trie (Trie (..))
 import Singular.Registry.Trie.Pure (stateTrie)
 import Singular.Registry.TrieState
@@ -520,7 +536,19 @@ newtype World = World {worldChain :: RawChain}
 no history.
 -}
 newWorld :: [(TxIn, TxOut ConwayEra)] -> IO World
-newWorld outs = do
+newWorld = newWorldOver syntheticTime
+
+{- | A network whose known time ends at slot 20000, with one-second slots: the
+time for the rows that need an end of the known time near the tip.
+-}
+shortTime :: NetworkTime
+shortTime = syntheticTimeWith 0 1 20_000
+
+{- | The same chain over another network's time, for the rows that need a known
+time other than the synthetic network's.
+-}
+newWorldOver :: NetworkTime -> [(TxIn, TxOut ConwayEra)] -> IO World
+newWorldOver time outs = do
     chain <-
         newRawChain
             ChainFacts
@@ -529,7 +557,7 @@ newWorld outs = do
                 , csPParams = withSyntheticCosts preprodParams
                 , csUTxO = Map.fromList outs
                 , csRegistered = Set.empty
-                , csNetworkTime = syntheticTime
+                , csNetworkTime = time
                 }
     jumpChainTo chain (SlotNo 10_000)
     pure (World chain)
@@ -797,6 +825,17 @@ mintedOf tx =
         | (p, names) <- Map.toList assets
         , (n, q) <- Map.toList names
         ]
+
+{- | The tip, and the slot an hour past it, read from the session's own time
+conversion: the end of the window a transaction with no window of its own is
+given.
+-}
+hourPastTip :: Session NoWitness IO -> IO (SlotNo, SlotNo)
+hourPastTip session = do
+    now <- observedSlot <$> tip session
+    startMs <- slotStart session now
+    later <- floorSlot session (startMs + 3_600_000)
+    pure (now, later)
 
 -- | The validity interval as slots.
 validityOf :: ConwayTx -> (Maybe SlotNo, Maybe SlotNo)

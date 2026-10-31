@@ -47,6 +47,7 @@ import Singular.Application.OpenDatum.RequestWorld
     , referencesOf
     , signersOf
     , txInOf
+    , validityOf
     , valueAda
     , withDatum
     , withSigners
@@ -210,6 +211,17 @@ spec = do
                         ]
                 forM_ mutated (judge world >=> (`shouldSatisfy` refusedBy))
 
+    describe "an update carries the window the cleanup carries" $ do
+        it
+            "ends an hour past the tip, by the session's own conversion, so it can be proved excluded"
+            $ withHolding
+            $ \world _ ref _ -> do
+                tx <- expectBuilt =<< update world ref (PLC.I 7)
+                (now, later) <- withSession world hourPastTip
+                later `shouldSatisfy` (> now)
+                snd (validityOf tx) `shouldBe` Just later
+                judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
+
     describe "an update builder declines before signing" $ do
         it "declines a missing holding beside each successful builder" $ withHolding $ \world _ ref _ -> do
             let missing = txInOf 'f' 0
@@ -280,6 +292,16 @@ spec = do
                         , withSigners [] tx
                         ]
                 forM_ mutations (judge world >=> (`shouldSatisfy` refusedBy))
+
+        it
+            "ends an hour past the tip, by the session's own conversion, so it can be proved excluded"
+            $ withHolding
+            $ \world _ ref _ -> do
+                tx <- expectBuilt =<< terminate world ref
+                (now, later) <- withSession world hourPastTip
+                later `shouldSatisfy` (> now)
+                snd (validityOf tx) `shouldBe` Just later
+                judge world tx >>= (`shouldSatisfy` everyScriptAccepts)
 
         it "declines a missing holding beside a successful booking" $ withHolding $ \world _ ref _ -> do
             _ <- expectBuilt =<< terminate world ref
