@@ -1,0 +1,20 @@
+{
+  "modules-for-retiring-the-legacy-command-layer": [
+    {
+      "text": "Modules for retiring the legacy command layer.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486, remainder. Changed responsibilities only; no module is added. Dependency direction is unchanged: the open-datum program depends on the registry command library, which names no application.",
+      "pause": 400
+    },
+    {
+      "text": "Candidates in the last two rows are confirmed by the compiler, not named here; the census in the gate lists what was found.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "f4c63f8b77731ac533fccd322773caa55d610018944943fbdc7cfb67b5e1efff"
+  }
+}

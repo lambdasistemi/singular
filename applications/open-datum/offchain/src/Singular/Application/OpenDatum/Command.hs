@@ -11,7 +11,7 @@ below happens before anything is read or submitted.
 
 The public writers are @create@, @fold@, @insert@,
 @reclaim@, @cleanup@, @update@ and
-@terminate@. Internal entry values remain for preparation and preview.
+@terminate@.
 
 Write commands name the Koios URL, network and wallet key. Partial settings
 and mainnet are refused before file reads or provider effects. Read commands
@@ -21,10 +21,6 @@ socket settings are refused on every command, including --backend koios.
 module Singular.Application.OpenDatum.Command
     ( -- * Commands
       OpenDatumCommand (..)
-    , CreateArgs (..)
-    , EntryArgs (..)
-    , EntryMode (..)
-    , FoldArgs (..)
     , InspectArgs (..)
     , StateCreateArgs (..)
     , StateFoldArgs (..)
@@ -36,7 +32,6 @@ module Singular.Application.OpenDatum.Command
     , WriteSettings (..)
     , RegistryAccess (..)
     , Key (..)
-    , neededRoles
 
       -- * Parsing
     , CLIError (..)
@@ -66,8 +61,6 @@ import Data.Char
     )
 import Data.List (partition)
 import Data.Maybe (isJust)
-import Data.Set (Set)
-import Data.Set qualified as Set (empty, fromList, singleton)
 import Data.Text qualified as T (pack, unpack)
 import Data.Version (Version)
 import Data.Word (Word32)
@@ -83,11 +76,7 @@ import Singular.Application.OpenDatum.Requests.Records
     ( RequestParameters (..)
     )
 import Singular.CLI.Command
-    ( CreateArgs (..)
-    , EntryArgs (..)
-    , EntryMode (..)
-    , FoldArgs (..)
-    , InspectArgs (..)
+    ( InspectArgs (..)
     , Key (..)
     , RegistryAccess (..)
     , StateCreateArgs (..)
@@ -143,10 +132,7 @@ import Singular.Registry.Config.Application
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.PlainJson (PayloadSchema)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
-import Singular.Registry.StateToken
-    ( ReferenceRole (..)
-    , parseStateToken
-    )
+import Singular.Registry.StateToken (parseStateToken)
 import Text.Read (readMaybe)
 
 -- | One parsed open-datum command line.
@@ -156,9 +142,6 @@ data OpenDatumCommand
       -}
       OpenHelp String
     | OpenInspect ReaderArgs
-    | OpenInsert EntryArgs
-    | OpenUpdate EntryArgs
-    | OpenTerminate EntryArgs
     | OpenStateCreate StateCreateArgs RequestParameters
     | OpenStateFold StateFoldArgs
     | OpenRegistrationBook BookArgs
@@ -791,27 +774,3 @@ openDatumRefusalHint :: CLIError -> [String]
 openDatumRefusalHint = \case
     MissingFlag name -> missingHint (openDatumProgram openDatumVersion) name
     _ -> []
-
-{- | The reference roles a command's transactions run, and so the only
-references it looks up.
--}
-neededRoles :: OpenDatumCommand -> Set ReferenceRole
-neededRoles = \case
-    OpenInsert a
-        | entryFold a -> everything
-        | otherwise -> Set.singleton RoleApplication
-    OpenUpdate _ -> Set.singleton RoleApplication
-    OpenTerminate a
-        | entryFold a -> everything
-        | otherwise -> Set.singleton RoleApplication
-    OpenStateCreate{} -> Set.empty
-    OpenStateFold _ -> Set.empty
-    OpenHoldingUpdate{} -> Set.empty
-    OpenHoldingTerminate{} -> Set.empty
-    OpenRegistrationBook _ -> Set.empty
-    OpenRegistrationReclaim _ -> Set.empty
-    OpenRegistrationCleanup _ -> Set.empty
-    OpenInspect _ -> Set.empty
-    OpenHelp _ -> Set.empty
-  where
-    everything = Set.fromList [minBound .. maxBound]

@@ -1,0 +1,28 @@
+{
+  "functions-for-retiring-the-legacy-command-layer": [
+    {
+      "text": "Functions for retiring the legacy command layer.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486, remainder. Removed signatures only; no new function.",
+      "pause": 400
+    },
+    {
+      "text": "The needed-references function of each program is deleted with its export. It had no caller outside its own tests, and with the booking branches gone it returned the empty set for every command.",
+      "pause": 300
+    },
+    {
+      "text": "The common-switches list drops the fold switch; the registry parser and the open-datum parser read the remaining switches exactly as before.",
+      "pause": 300
+    },
+    {
+      "text": "Outlay and plan helpers with no production caller are deleted as the compiler shows; the production outlay and refusal helpers keep their signatures.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "0550a2c808bf49aa364a797f28bdcf9b2089894b917edda16e72144c66177e6d"
+  }
+}

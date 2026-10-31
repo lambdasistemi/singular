@@ -90431,17 +90431,17 @@
    ]
   },
   "docs-offchain-api-reference/what-the-reference-does-not-claim-01": {
-   "audio_sha256": "672b03c16d21bbdf2f53ec2198bb0c27998d67afe55364dfc7a9afb934c9c621",
-   "characters": 3516,
-   "cost": 0.0034808400000000002,
-   "duration": 258.3,
+   "audio_sha256": "2702438708440e11186918ad490ae13f24d43b604262a0fd5d1fb03f20c1c540",
+   "characters": 3495,
+   "cost": 0.0034600499999999997,
+   "duration": 256.65,
    "index": 1,
-   "key": "38d2ff96a6711aa416ad6482351922663cd38bf782fe1c02b74e627304911935",
+   "key": "89595012caccba1631bdc3224e980a92655d5cad069ed91ae3a33df5de46fa04",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-the-reference-does-not-claim",
-   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope and release rules — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, registry helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Finish, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope and release rules — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, registry helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Finish, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope and release rules — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, registry helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Finish, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Payload, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — command groups, envelope and release rules — and the request builders of the registry on the proved design: the booking of a registration, its reclaim by the refund address and its cleanup after the window, the configuration record added to the creation of a registry, the records and actions of the request validator in the layout it decodes, the validator as a transaction carries it, the reasons a builder declines, what open datum hands the fold of a registry, and the commands that create a registry and book, reclaim and clean up a registration: Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Registration, Singular.Application.OpenDatum.Requests.Booking, Singular.Application.OpenDatum.Requests.Configuration, Singular.Application.OpenDatum.Requests.Fold, Singular.Application.OpenDatum.Requests.Pending, Singular.Application.OpenDatum.Requests.Records, Singular.Application.OpenDatum.Requests.Refusal, Singular.Application.OpenDatum.Requests.Script, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, registry helpers, reconciliation, recovery and the creation of a registry on the proved design with the fold into it: Singular.CLI, Singular.CLI.Command, Singular.CLI.Finish, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Payload, Singular.CLI.Plan, Singular.CLI.Promise, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.State, Singular.CLI.Steps, Singular.CLI.Trace, Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
    "words": [
     {
      "end": 0.375,
@@ -93009,388 +93009,368 @@
      "text": ","
     },
     {
-     "end": 220.775,
-     "start": 220.325,
+     "end": 220.8,
+     "start": 220.35,
      "text": "Singular"
     },
     {
-     "end": 220.85,
-     "start": 220.775,
+     "end": 220.875,
+     "start": 220.8,
      "text": "."
     },
     {
-     "end": 221.5,
-     "start": 220.85,
+     "end": 221.625,
+     "start": 220.875,
      "text": "CLI.Live"
     },
     {
-     "end": 221.562,
-     "start": 221.5,
+     "end": 221.688,
+     "start": 221.625,
      "text": ","
     },
     {
-     "end": 222.05,
-     "start": 221.562,
+     "end": 222.15,
+     "start": 221.688,
      "text": "Singular"
     },
     {
-     "end": 222.125,
-     "start": 222.05,
+     "end": 222.225,
+     "start": 222.15,
      "text": "."
     },
     {
-     "end": 223.15,
-     "start": 222.125,
+     "end": 223.4,
+     "start": 222.225,
      "text": "CLI.ManagedState"
     },
     {
-     "end": 223.238,
-     "start": 223.15,
+     "end": 223.488,
+     "start": 223.4,
      "text": ","
     },
     {
-     "end": 223.675,
-     "start": 223.238,
+     "end": 224.0,
+     "start": 223.488,
      "text": "Singular"
     },
     {
-     "end": 223.725,
-     "start": 223.675,
+     "end": 224.1,
+     "start": 224.0,
      "text": "."
     },
     {
-     "end": 225.025,
-     "start": 223.725,
-     "text": "CLI.Outlay"
+     "end": 224.925,
+     "start": 224.1,
+     "text": "CLI.Payload"
     },
     {
-     "end": 225.275,
-     "start": 225.025,
+     "end": 225.012,
+     "start": 224.925,
      "text": ","
     },
     {
-     "end": 225.975,
-     "start": 225.525,
+     "end": 225.5,
+     "start": 225.012,
      "text": "Singular"
     },
     {
-     "end": 226.05,
-     "start": 225.975,
+     "end": 225.55,
+     "start": 225.5,
      "text": "."
     },
     {
      "end": 226.9,
-     "start": 226.05,
-     "text": "CLI.Payload"
+     "start": 225.55,
+     "text": "CLI.Plan"
     },
     {
-     "end": 226.962,
+     "end": 227.15,
      "start": 226.9,
      "text": ","
     },
     {
-     "end": 227.475,
-     "start": 226.962,
+     "end": 227.825,
+     "start": 227.375,
      "text": "Singular"
     },
     {
-     "end": 227.575,
-     "start": 227.475,
+     "end": 227.9,
+     "start": 227.825,
      "text": "."
     },
     {
-     "end": 228.325,
-     "start": 227.575,
-     "text": "CLI.Plan"
-    },
-    {
-     "end": 228.413,
-     "start": 228.325,
-     "text": ","
-    },
-    {
-     "end": 228.9,
-     "start": 228.413,
-     "text": "Singular"
-    },
-    {
-     "end": 228.975,
-     "start": 228.9,
-     "text": "."
-    },
-    {
-     "end": 229.8,
-     "start": 228.975,
+     "end": 228.675,
+     "start": 227.9,
      "text": "CLI.Promise"
     },
     {
-     "end": 229.863,
-     "start": 229.8,
+     "end": 228.738,
+     "start": 228.675,
      "text": ","
     },
     {
-     "end": 230.35,
-     "start": 229.863,
+     "end": 229.225,
+     "start": 228.738,
      "text": "Singular"
     },
     {
-     "end": 230.425,
-     "start": 230.35,
+     "end": 229.325,
+     "start": 229.225,
      "text": "."
     },
     {
-     "end": 231.775,
-     "start": 230.425,
+     "end": 230.05,
+     "start": 229.325,
      "text": "CLI.Proof"
     },
     {
-     "end": 232.0,
-     "start": 231.775,
+     "end": 230.113,
+     "start": 230.05,
      "text": ","
     },
     {
-     "end": 232.675,
-     "start": 232.225,
+     "end": 230.6,
+     "start": 230.113,
      "text": "Singular"
     },
     {
-     "end": 232.75,
-     "start": 232.675,
+     "end": 230.675,
+     "start": 230.6,
      "text": "."
     },
     {
-     "end": 233.475,
-     "start": 232.75,
+     "end": 231.9,
+     "start": 230.675,
      "text": "CLI.Receipt"
     },
     {
-     "end": 233.562,
-     "start": 233.475,
+     "end": 232.1,
+     "start": 231.9,
      "text": ","
     },
     {
-     "end": 234.125,
-     "start": 233.562,
+     "end": 232.775,
+     "start": 232.325,
      "text": "Singular"
     },
     {
-     "end": 234.25,
-     "start": 234.125,
+     "end": 232.85,
+     "start": 232.775,
      "text": "."
     },
     {
-     "end": 235.3,
-     "start": 234.25,
+     "end": 233.825,
+     "start": 232.85,
      "text": "CLI.ReceiptBody"
     },
     {
-     "end": 235.387,
-     "start": 235.3,
+     "end": 233.913,
+     "start": 233.825,
      "text": ","
     },
     {
-     "end": 235.875,
-     "start": 235.387,
+     "end": 234.425,
+     "start": 233.913,
      "text": "Singular"
     },
     {
-     "end": 235.95,
-     "start": 235.875,
+     "end": 234.525,
+     "start": 234.425,
      "text": "."
     },
     {
-     "end": 237.475,
-     "start": 235.95,
+     "end": 235.525,
+     "start": 234.525,
      "text": "CLI.Reconcile"
     },
     {
-     "end": 237.675,
-     "start": 237.475,
+     "end": 235.613,
+     "start": 235.525,
      "text": ","
     },
     {
-     "end": 238.375,
-     "start": 237.925,
+     "end": 236.1,
+     "start": 235.613,
      "text": "Singular"
     },
     {
-     "end": 238.45,
-     "start": 238.375,
+     "end": 236.175,
+     "start": 236.1,
      "text": "."
     },
     {
-     "end": 239.35,
-     "start": 238.45,
+     "end": 237.6,
+     "start": 236.175,
      "text": "CLI.Recovery"
     },
     {
-     "end": 239.438,
-     "start": 239.35,
+     "end": 237.825,
+     "start": 237.6,
      "text": ","
     },
     {
-     "end": 239.975,
-     "start": 239.438,
+     "end": 238.525,
+     "start": 238.075,
      "text": "Singular"
     },
     {
-     "end": 240.05,
-     "start": 239.975,
+     "end": 238.6,
+     "start": 238.525,
      "text": "."
     },
     {
-     "end": 241.05,
-     "start": 240.05,
+     "end": 239.525,
+     "start": 238.6,
      "text": "CLI.Registry"
     },
     {
-     "end": 241.137,
-     "start": 241.05,
+     "end": 239.613,
+     "start": 239.525,
      "text": ","
     },
     {
-     "end": 241.7,
-     "start": 241.137,
+     "end": 240.175,
+     "start": 239.613,
      "text": "Singular"
     },
     {
-     "end": 241.8,
-     "start": 241.7,
+     "end": 240.3,
+     "start": 240.175,
      "text": "."
     },
     {
-     "end": 242.475,
-     "start": 241.8,
+     "end": 241.0,
+     "start": 240.3,
      "text": "CLI.Root"
     },
     {
-     "end": 242.562,
-     "start": 242.475,
+     "end": 241.087,
+     "start": 241.0,
      "text": ","
     },
     {
-     "end": 243.05,
-     "start": 242.562,
+     "end": 241.575,
+     "start": 241.087,
      "text": "Singular"
     },
     {
-     "end": 243.125,
-     "start": 243.05,
+     "end": 241.65,
+     "start": 241.575,
      "text": "."
     },
     {
-     "end": 244.6,
-     "start": 243.125,
+     "end": 242.5,
+     "start": 241.65,
      "text": "CLI.Session"
     },
     {
-     "end": 244.8,
-     "start": 244.6,
+     "end": 242.587,
+     "start": 242.5,
      "text": ","
     },
     {
-     "end": 245.475,
-     "start": 245.025,
+     "end": 243.075,
+     "start": 242.587,
      "text": "Singular"
     },
     {
-     "end": 245.525,
-     "start": 245.475,
+     "end": 243.15,
+     "start": 243.075,
      "text": "."
     },
     {
-     "end": 246.25,
-     "start": 245.525,
+     "end": 244.5,
+     "start": 243.15,
      "text": "CLI.State"
     },
     {
-     "end": 246.312,
-     "start": 246.25,
+     "end": 244.725,
+     "start": 244.5,
      "text": ","
     },
     {
-     "end": 246.775,
-     "start": 246.312,
+     "end": 245.375,
+     "start": 244.95,
      "text": "Singular"
     },
     {
-     "end": 246.85,
-     "start": 246.775,
+     "end": 245.45,
+     "start": 245.375,
      "text": "."
     },
     {
-     "end": 247.7,
-     "start": 246.85,
+     "end": 246.15,
+     "start": 245.45,
      "text": "CLI.Steps"
     },
     {
-     "end": 247.788,
-     "start": 247.7,
+     "end": 246.2,
+     "start": 246.15,
      "text": ","
     },
     {
-     "end": 248.275,
-     "start": 247.788,
+     "end": 246.675,
+     "start": 246.2,
      "text": "Singular"
     },
     {
-     "end": 248.35,
-     "start": 248.275,
+     "end": 246.775,
+     "start": 246.675,
      "text": "."
     },
     {
-     "end": 249.075,
-     "start": 248.35,
+     "end": 247.475,
+     "start": 246.775,
      "text": "CLI.Trace"
     },
     {
-     "end": 249.125,
-     "start": 249.075,
+     "end": 247.538,
+     "start": 247.475,
      "text": ","
     },
     {
-     "end": 249.575,
-     "start": 249.125,
+     "end": 248.025,
+     "start": 247.538,
      "text": "Singular"
     },
     {
-     "end": 249.65,
-     "start": 249.575,
+     "end": 248.1,
+     "start": 248.025,
      "text": "."
     },
     {
-     "end": 251.275,
-     "start": 249.65,
+     "end": 249.65,
+     "start": 248.1,
      "text": "CLI.TrieTrace"
     },
     {
-     "end": 251.5,
-     "start": 251.275,
+     "end": 249.85,
+     "start": 249.65,
      "text": ";"
     },
     {
-     "end": 251.875,
-     "start": 251.7,
+     "end": 250.225,
+     "start": 250.05,
      "text": "their"
     },
     {
-     "end": 252.325,
-     "start": 251.875,
+     "end": 250.675,
+     "start": 250.225,
      "text": "sources"
     },
     {
-     "end": 252.512,
-     "start": 252.325,
+     "end": 250.863,
+     "start": 250.675,
      "text": "live"
     },
     {
-     "end": 252.762,
-     "start": 252.512,
+     "end": 251.113,
+     "start": 250.863,
      "text": "under"
     },
     {
-     "end": 258.3,
-     "start": 252.762,
+     "end": 256.65,
+     "start": 251.113,
      "text": "offchain/cli/src/Singular/CLI/."
     }
    ]

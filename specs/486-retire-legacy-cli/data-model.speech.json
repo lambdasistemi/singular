@@ -1,0 +1,32 @@
+{
+  "data-for-retiring-the-legacy-command-layer": [
+    {
+      "text": "Data for retiring the legacy command layer.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486, remainder. Types removed; none added; no wire format, receipt or file format changes.",
+      "pause": 400
+    },
+    {
+      "text": "Removed command values: the singular program's fold value, and the open-datum program's insert, update and terminate booking values.",
+      "pause": 300
+    },
+    {
+      "text": "Removed argument records: the entry record with its fold flag, the fold record, and the create record with its entry mode.",
+      "pause": 300
+    },
+    {
+      "text": "Kept: the state-create and state-fold records, the holding and booking records of the production commands, the inspect record, the wallet, sign and submit records.",
+      "pause": 300
+    },
+    {
+      "text": "Invariant: every constructor of a command type is produced by at least one command line the parser accepts.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "25ad22f56c3104b19d750f48ac6e41ad66bf254c933a06d39824f995aca5a541"
+  }
+}

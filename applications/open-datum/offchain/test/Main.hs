@@ -16,7 +16,6 @@ import Singular.Application.OpenDatum.HelpSnapshotSpec qualified
 import Singular.Application.OpenDatum.LibraryStateSpec qualified
 import Singular.Application.OpenDatum.ManagedStateSpec qualified
 import Singular.Application.OpenDatum.NeutralValueSpec qualified
-import Singular.Application.OpenDatum.OutlaySpec qualified
 import Singular.Application.OpenDatum.ParserCorpusSpec qualified
 import Singular.Application.OpenDatum.PartitionLibrarySpec qualified
 import Singular.Application.OpenDatum.PinGateSpec qualified
@@ -44,9 +43,6 @@ import Test.Tags (Area (..), tagged)
 
 main :: IO ()
 main = hspec $ do
-    describe
-        (tagged "Singular.Application.OpenDatum.Outlay" [Cli])
-        Singular.Application.OpenDatum.OutlaySpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.Application" [Application])
         Singular.Application.OpenDatum.ApplicationSpec.spec

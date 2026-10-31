@@ -1,0 +1,56 @@
+{
+  "tasks-for-retiring-the-legacy-command-layer": [
+    {
+      "text": "Tasks for retiring the legacy command layer.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 486, remainder. Grouped by the slice of the plan. A task is checked only after the ticket owner accepts its slice.",
+      "pause": 400
+    }
+  ],
+  "binding": [
+    {
+      "text": "Binding.",
+      "pause": 500
+    },
+    {
+      "text": "[x] gate-frozen: the gate rows of the gate page frozen with their hash before the commit owner starts.",
+      "pause": 300
+    }
+  ],
+  "slice-delete-the-legacy-values": [
+    {
+      "text": "Slice: delete the legacy values.",
+      "pause": 500
+    },
+    {
+      "text": "[x] roots-deleted: the singular fold value, the three open-datum booking values, their arms, argument records, entry mode and create record.",
+      "pause": 300
+    },
+    {
+      "text": "[x] fold-switch-removed: the switch leaves the shared switch list and both parsers; a command line carrying it is refused as an unknown flag.",
+      "pause": 300
+    },
+    {
+      "text": "[x] compiler-closure: every binding left without a production caller is deleted until the unused-binding warning is silent.",
+      "pause": 300
+    },
+    {
+      "text": "[x] tests-and-rows: tests, corpus rows and snapshot entries of deleted subjects are gone; only rows that carried the switch are re-recorded.",
+      "pause": 300
+    },
+    {
+      "text": "[x] evidence-ported: each test that was the only evidence for a production behaviour is ported and named in the pull request.",
+      "pause": 300
+    },
+    {
+      "text": "[x] consumers-green: inventory, declared checks, documentation and speech companions follow the deleted files.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "9301a79c0306225ec0f7d6ef913e1712cc0adf873f2af3e2e34d5891c489e8c3"
+  }
+}

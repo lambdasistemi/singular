@@ -20,10 +20,6 @@ and socket settings are refused on every command, including --backend koios.
 module Singular.CLI.Command
     ( -- * Commands
       Command (..)
-    , CreateArgs (..)
-    , EntryArgs (..)
-    , EntryMode (..)
-    , FoldArgs (..)
     , InspectArgs (..)
     , ProviderSettings (..)
     , StateCreateArgs (..)
@@ -33,7 +29,6 @@ module Singular.CLI.Command
     , RegistryAccess (..)
     , Key (..)
     , ApplicationPolicy (..)
-    , neededRoles
 
       -- * Parsing
     , CLIError (..)
@@ -74,8 +69,6 @@ import Data.ByteString.Short qualified as SBS
     )
 import Data.List (partition)
 import Data.Maybe (isJust)
-import Data.Set (Set)
-import Data.Set qualified as Set (empty, fromList)
 import Data.Text qualified as T (pack)
 import Data.Text.Encoding qualified as TE (encodeUtf8)
 import Data.Version (Version)
@@ -141,9 +134,7 @@ import Singular.CLI.Vault
 import Singular.CLI.Version (releaseVersion)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
-import Singular.Registry.PlainJson (PayloadSchema)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
-import Singular.Registry.StateToken (ReferenceRole)
 import Singular.Registry.Wallet
     ( Wallet (..)
     , bech32Address
@@ -187,93 +178,6 @@ data WriteSettings = WriteSettings
 -}
 newtype RegistryAccess = RegistryAccess
     { accessToken :: Asset
-    }
-    deriving stock (Eq, Show)
-
--- | @registry create@.
-data CreateArgs = CreateArgs
-    { createStateDir :: Maybe FilePath
-    -- ^ Optional state root override; absent, the managed default root applies
-    , createBlueprint :: FilePath
-    , createMode :: EntryMode
-    {- ^ Submit with the caller's key, or (with @--preview@ only) read for a
-    public address
-    -}
-    , createSeed :: Maybe String
-    -- ^ @txid#index@ of the wallet output the boot consumes
-    , createPreview :: Bool
-    , createReceipt :: Maybe FilePath
-    , createSaveStateTokenTo :: Maybe FilePath
-    {- ^ @--save-state-token@: the settings file that takes the new registry's
-    state token when the create succeeds, as the commands read it (@--config@,
-    else @SINGULAR_CONFIG@, else @singular.json@ in the working directory)
-    -}
-    , createProcessTime :: Integer
-    -- ^ Positive processing window in milliseconds, fixed at creation
-    , createRetractTime :: Integer
-    -- ^ Positive retract window in milliseconds, fixed at creation
-    }
-    deriving stock (Eq, Show)
-
-{- | What an entry command does with the transactions it builds: sign and
-submit them with the caller's key, or prepare them for a public address
-and submit nothing. A preview carries no signing key at all.
--}
-data EntryMode
-    = Submit WriteSettings
-    | -- | The node to read, and the caller's enterprise address, bech32
-      Preview ProviderSettings String
-    deriving stock (Eq, Show)
-
--- | @registry insert@, @registry update@ and @registry terminate@.
-data EntryArgs = EntryArgs
-    { entryStateDir :: Maybe FilePath
-    -- ^ Optional state root override; absent, the managed default root applies
-    , entryAccess :: RegistryAccess
-    , entryBlueprint :: FilePath
-    , entryMode :: EntryMode
-    , entryKey :: Key
-    , entryDocument :: Maybe FilePath
-    -- ^ @insert@ and @update@: the payload file (@--payload@); @terminate@: none
-    , entryPayloadSchema :: PayloadSchema
-    {- ^ The form the payload file is written in (@--payload-schema@): plain
-    JSON when the flag is absent. A command with no payload file ignores it.
-    -}
-    , entryDeposit :: Maybe Integer
-    {- ^ @insert@: the protected deposit in lovelace (@--deposit@, else the
-    minimum); @update@ and @terminate@: none
-    -}
-    , entryFund :: Maybe TxIn
-    -- ^ @--fund-input@: the wallet output to fund and collateralise from
-    , entryMaxOutlay :: Maybe Integer
-    {- ^ @--max-outlay@: lovelace the command may put out; past it nothing is
-    submitted
-    -}
-    , entryReceipt :: Maybe FilePath
-    , entryFold :: Bool
-    {- ^ @--fold@: after the booking confirms, run the fold the way
-    @registry fold@ does. @insert@ and @terminate@ only, never with
-    @--preview@
-    -}
-    }
-    deriving stock (Eq, Show)
-
--- | @registry fold@: the registry's pending request, folded by this wallet.
-data FoldArgs = FoldArgs
-    { foldStateDir :: Maybe FilePath
-    -- ^ Optional state root override; absent, the managed default root applies
-    , foldAccess :: RegistryAccess
-    , foldBlueprint :: FilePath
-    , foldWrite :: WriteSettings
-    , foldRequest :: Maybe TxIn
-    {- ^ @--request@: the pending request the caller expects to fold; the
-    fold is refused when it is not the one pending
-    -}
-    , foldFund :: Maybe TxIn
-    -- ^ @--fund-input@: the wallet output that funds and collateralises the fold
-    , foldMaxOutlay :: Maybe Integer
-    -- ^ @--max-outlay@: lovelace the fold may put out; past it nothing is signed
-    , foldReceipt :: Maybe FilePath
     }
     deriving stock (Eq, Show)
 
@@ -390,8 +294,6 @@ data Command
       line asked for it, so nothing else runs
       -}
       Help String
-    | -- | Internal value used by the retained application fold helper to select references; no public parser route
-      Fold FoldArgs
     | RegistryInspect ReaderArgs
     | StateCreate StateCreateArgs
     | WalletCreate WalletArgs
@@ -721,7 +623,7 @@ commandFrom environment (Raw ws allFlags) = do
     -- else from the shared group: no wallet key, no registry setting,
     -- each refused by name rather than ignored.
     submitArgs bundle witnesses flags = do
-        forM_ (commonFlagGroup <> extraValuedFlags <> ["--preview", "--fold"]) $ \flag ->
+        forM_ (commonFlagGroup <> extraValuedFlags <> ["--preview"]) $ \flag ->
             unless (flag `elem` submitTakes) $
                 when (isJust (lookup flag flags)) $
                     Left
@@ -884,20 +786,6 @@ refusalHint :: CLIError -> [String]
 refusalHint = \case
     MissingFlag name -> missingHint (singularProgram singularVersion) name
     _ -> []
-
-{- | The reference roles a command's transactions run, and so the only
-references it looks up.
--}
-neededRoles :: Command -> Set ReferenceRole
-neededRoles = \case
-    Fold _ -> Set.fromList [minBound .. maxBound]
-    RegistryInspect _ -> Set.empty
-    StateCreate _ -> Set.empty
-    WalletCreate _ -> Set.empty
-    WalletAddress _ -> Set.empty
-    WalletSign _ -> Set.empty
-    SubmitBundle _ -> Set.empty
-    Help _ -> Set.empty
 
 -- * The wallet verbs
 

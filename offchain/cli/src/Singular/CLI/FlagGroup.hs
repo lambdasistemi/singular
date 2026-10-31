@@ -166,9 +166,9 @@ commonFlagGroup =
     , "--registry"
     ]
 
--- | The switches every binary reads: help, preview and fold.
+-- | The switches every binary reads: help and preview.
 commonSwitches :: [String]
-commonSwitches = ["--help", "-h", "--preview", "--fold"]
+commonSwitches = ["--help", "-h", "--preview"]
 
 {- | Split a command line into its words and its flags over a full valued
 list, the first occurrence of a flag winning. A value flag takes the
