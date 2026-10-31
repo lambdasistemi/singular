@@ -79,8 +79,8 @@ identity starts uncovered); theorem removal (obligation vanished); lying
   owner/user review; not delivered coverage).
 - `correspondence/` — two rendered human-correspondence views: a ground instance
   (`naming_occupied_key_refuses_duplicate.md`) and the quantified equivalence under load
-  (`fold_iff.md`, whose converse is contradicted by the compiled validator — F-002, held
-  for user ruling operator question (Q-002)). Review surfaces for the user; not delivered coverage.
+  (`fold_iff.md`, whose converse was contradicted by the compiled validator — F-002, repaired in
+  #79). Review surfaces for the user; not delivered coverage.
 
 ## Limits, stated
 

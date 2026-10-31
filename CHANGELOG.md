@@ -1337,7 +1337,7 @@
 * mark insertActive conformance as pending ([01f14f2](https://github.com/lambdasistemi/singular/commit/01f14f2f9f4057af49c018e1702a4301132ec47c))
 * plan [#157](https://github.com/lambdasistemi/singular/issues/157) — the cage in registry mode replaces consumer.ak ([6db37a0](https://github.com/lambdasistemi/singular/commit/6db37a092be065b8510b3e5de97a072b943fb85b))
 * plan the registry-mode Lean model ([3c91180](https://github.com/lambdasistemi/singular/commit/3c91180d828050806f5d1445ad412f304215df1d))
-* recompile the [#156](https://github.com/lambdasistemi/singular/issues/156) mandate as two slices under ruling operator answer (A-001) ([5db006e](https://github.com/lambdasistemi/singular/commit/5db006eff362589e5c3f7a9cdf5a03f860e8d297))
+* recompile the [#156](https://github.com/lambdasistemi/singular/issues/156) mandate as two slices ([5db006e](https://github.com/lambdasistemi/singular/commit/5db006eff362589e5c3f7a9cdf5a03f860e8d297))
 * record frozen insertActive gate ([1bdb437](https://github.com/lambdasistemi/singular/commit/1bdb437f3f94ebdd907dcb342289bc0883282252))
 * record insertActive ticket readiness ([38e311a](https://github.com/lambdasistemi/singular/commit/38e311a2794c7058986614485700f1429a2b4416))
 * record the theorem-page finding as two mandate obligations ([97e2f31](https://github.com/lambdasistemi/singular/commit/97e2f3118884c050379733ee9bc90db1c1f1205b))
@@ -1501,11 +1501,11 @@
 * **coverage:** failure-safe session teardown for devnet stories ([e48de2c](https://github.com/lambdasistemi/singular/commit/e48de2c889a8670b88704c9b6cb15f4dba4d41ee))
 * make folding permissionless and retraction insert-only ([bf9f42d](https://github.com/lambdasistemi/singular/commit/bf9f42db5ca420171f9f13cd892f005292a1aa7e))
 * ownerless prose consistency for the operator ruling ([55dea40](https://github.com/lambdasistemi/singular/commit/55dea40d6140ed8f42372e4b787f9e3e96e8cffc))
-* ownerless registry per operator ruling operator note (NOTE-028)/A-003 ([f3a68b1](https://github.com/lambdasistemi/singular/commit/f3a68b1bcd63119f8db79548a7d15926bf408856))
+* ownerless registry ([f3a68b1](https://github.com/lambdasistemi/singular/commit/f3a68b1bcd63119f8db79548a7d15926bf408856))
 * **rebase:** merge duplicate Scripts.Data import after registry-identity rebase ([a5104c2](https://github.com/lambdasistemi/singular/commit/a5104c21e64ddca5ccc5ce4651dfd791dacb5801))
 * rename tampered representative row to misnamed ([0891eb1](https://github.com/lambdasistemi/singular/commit/0891eb1c4d6c5caff4ccd495eac72a0eca4a1ad5))
 * repair-batch E-001 cause, producer identity, release source binding ([fe89e68](https://github.com/lambdasistemi/singular/commit/fe89e686d6be5343a9818f470b99942a5f5589f2))
-* two more ownerless prose sites per operator note (NOTE-013) ([d1fc24a](https://github.com/lambdasistemi/singular/commit/d1fc24a67b732d10320cf4decc59013d5647f9b7))
+* two more ownerless prose sites ([d1fc24a](https://github.com/lambdasistemi/singular/commit/d1fc24a67b732d10320cf4decc59013d5647f9b7))
 
 
 ### Documentation
@@ -1521,7 +1521,7 @@
 * **coverage:** inhabit the fold_iff Insert exhibit, separate held zero-side ([30b6d03](https://github.com/lambdasistemi/singular/commit/30b6d0378e10b0b36d771d14a7505fbd6c420c91))
 * **coverage:** name the candidate commit in evidence transcripts ([0aba3ae](https://github.com/lambdasistemi/singular/commit/0aba3ae7c77e4ff309703a0b12e5e3976d0369c6))
 * **coverage:** qualify non-vacuity wording both directions ([062017c](https://github.com/lambdasistemi/singular/commit/062017cfecd3cf54aff9e0141ae65282efa8de1d))
-* **coverage:** render fold_iff — the correspondence format under load (issue [#80](https://github.com/lambdasistemi/singular/issues/80); operator note (NOTE-004)/005 repair) ([569bfa7](https://github.com/lambdasistemi/singular/commit/569bfa700aaa63f9f4c09883a3fdfff151cf0962))
+* **coverage:** render fold_iff — the correspondence format under load (issue [#80](https://github.com/lambdasistemi/singular/issues/80)) ([569bfa7](https://github.com/lambdasistemi/singular/commit/569bfa700aaa63f9f4c09883a3fdfff151cf0962))
 * **coverage:** show the S13d arithmetic and the empty-fold absence check ([64567dd](https://github.com/lambdasistemi/singular/commit/64567dd54fed8af19e85ca9e99e797a054940077))
 * **coverage:** tasty-bdd bounded evaluation, human-correspondence view, gate README (issue [#80](https://github.com/lambdasistemi/singular/issues/80)) ([c1865d9](https://github.com/lambdasistemi/singular/commit/c1865d9900bf94986d53f12ea233fe182472106d))
 * establish Lean authority in the repository constitution ([91f0053](https://github.com/lambdasistemi/singular/commit/91f005321d3678c423e1656121fb18cca06ae466))
@@ -1534,7 +1534,7 @@
 * **conformance:** run the canonical-identity rows ([21246cb](https://github.com/lambdasistemi/singular/commit/21246cb51ea2305172ff0cd042b8232665effbca))
 * keep conformance receipts outside the source checkout ([cd40fe5](https://github.com/lambdasistemi/singular/commit/cd40fe59cacf782287a89f3b0b2e5afe1e2571bf))
 * lint jq programs with their intended variable scope ([3b749ce](https://github.com/lambdasistemi/singular/commit/3b749cec5272fb4709019d1a4333aefcb4786f8a))
-* pass MPFS blueprint to recovery/retirement jobs plus truthful scope comments (operator note (NOTE-045)/047) ([e3349f0](https://github.com/lambdasistemi/singular/commit/e3349f008cba3ef65dc1c36614e1397110b7dfbd))
+* pass MPFS blueprint to recovery/retirement jobs plus truthful scope comments ([e3349f0](https://github.com/lambdasistemi/singular/commit/e3349f008cba3ef65dc1c36614e1397110b7dfbd))
 
 ## [0.3.0](https://github.com/lambdasistemi/singular/compare/v0.2.0...v0.3.0) (2026-09-11)
 
