@@ -21,22 +21,16 @@ import Data.ByteString.Base16 qualified as B16 (encode)
 import Data.ByteString.Char8 qualified as BC (unpack)
 import Data.ByteString.Short qualified as SBS (fromShort)
 import Data.List (isInfixOf)
-import Data.Set qualified as Set (empty, fromList, singleton)
+import Data.Set qualified as Set (empty)
 import Data.Text qualified as T (isInfixOf, replicate)
 import Singular.Application.OpenDatum.Command
     ( BookArgs (..)
     , CLIError (BadValue, MissingFlag)
-    , EntryArgs (..)
-    , EntryMode (..)
     , HoldingArgs (..)
-    , Key (..)
     , OpenDatumCommand (..)
     , PendingArgs (..)
-    , ProviderSettings (..)
     , RegistryAccess (..)
-    , Signer (..)
     , StateFoldArgs (..)
-    , WriteSettings (..)
     , neededRoles
     , parseOpenDatumCommand
     , parseOpenDatumCommandWithEnvironment
@@ -48,8 +42,6 @@ import Singular.Application.OpenDatum.StateTokenFixture
     )
 import Singular.CLI.Registry (checkPendingToken)
 import Singular.Registry.LedgerProvider qualified as LP (Asset)
-import Singular.Registry.PlainJson (PayloadSchema (PlainSchema))
-import Singular.Registry.StateToken (ReferenceRole (..))
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
@@ -233,42 +225,10 @@ badValueOf flag = \case
 -- ---------------------------------------------------------------------------
 
 rolesPerCommand :: Spec
-rolesPerCommand = describe "the reference roles each internal preparation value needs" $ do
-    let args =
-            EntryArgs
-                { entryStateDir = Nothing
-                , entryAccess = ours
-                , entryBlueprint = "/srv/plutus.json"
-                , entryMode =
-                    Submit
-                        ( WriteSettings
-                            (ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing)
-                            (SignerKeyFile "/keys/payment.skey")
-                            Nothing
-                        )
-                , entryKey = Key "k"
-                , entryDocument = Just "/p.json"
-                , entryPayloadSchema = PlainSchema
-                , entryDeposit = Nothing
-                , entryFund = Nothing
-                , entryMaxOutlay = Nothing
-                , entryReceipt = Nothing
-                , entryFold = False
-                }
-        everything = Set.fromList [minBound .. maxBound]
-    it
-        "uses the application for each entry and all roles for a combined booking and fold"
-        $ do
-            neededRoles (OpenInsert args) `shouldBe` Set.singleton RoleApplication
-            neededRoles (OpenUpdate args) `shouldBe` Set.singleton RoleApplication
-            neededRoles (OpenTerminate args)
-                `shouldBe` Set.singleton RoleApplication
-            neededRoles (OpenInsert args{entryFold = True}) `shouldBe` everything
-            neededRoles (OpenTerminate args{entryFold = True})
-                `shouldBe` everything
-    it
+rolesPerCommand = describe "the reference roles each command needs"
+    $ it
         "keeps the request-contract commands independent of the old reference roles"
-        $ forM_ commands
-        $ \(_, line) ->
-            fmap neededRoles (parseOpenDatumCommand (line <> tokenFlag))
-                `shouldBe` Right Set.empty
+    $ forM_ commands
+    $ \(_, line) ->
+        fmap neededRoles (parseOpenDatumCommand (line <> tokenFlag))
+            `shouldBe` Right Set.empty

@@ -41,8 +41,7 @@ import Singular.Application.OpenDatum.Requests.Records
     )
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Inspect (runReader)
-import Singular.CLI.Receipt (OutcomeClass (ClientRefusal))
-import Singular.CLI.Session (Env (..), failWith, openWriteSigner)
+import Singular.CLI.Session (Env (..), openWriteSigner)
 import Singular.CLI.State (runStateCreate, runStateFold)
 import System.Exit (ExitCode (..))
 
@@ -51,18 +50,6 @@ runOpenDatum :: Env -> OpenDatumCommand -> IO ExitCode
 runOpenDatum env = \case
     OpenInspect a -> runReader "inspect" env a openDatumInspection
     OpenHelp text -> putStr text >> pure ExitSuccess
-    OpenInsert _ ->
-        failWith
-            ClientRefusal
-            "this internal preparation value is not a public command"
-    OpenUpdate _ ->
-        failWith
-            ClientRefusal
-            "this internal preparation value is not a public command"
-    OpenTerminate _ ->
-        failWith
-            ClientRefusal
-            "this internal preparation value is not a public command"
     OpenStateCreate a parameters ->
         finish
             (envTracer env)

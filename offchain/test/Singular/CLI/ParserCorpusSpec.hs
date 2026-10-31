@@ -128,7 +128,7 @@ spec = describe "the command lines in use" $ do
                 ]
         length entries `shouldBe` 668
         length [() | e <- entries, "refused" `isPrefix` expectedResult e]
-            `shouldBe` 529
+            `shouldBe` 534
   where
     isPrefix p s = take (length p) s == p
     acceptedKind entry = case parseEntry entry of

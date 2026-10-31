@@ -113,7 +113,7 @@ pinnedCommonValued =
 
 -- | The accepted common switches, pinned in full.
 pinnedSwitches :: [String]
-pinnedSwitches = ["--help", "-h", "--preview", "--fold"]
+pinnedSwitches = ["--help", "-h", "--preview"]
 
 -- | The one valued flag the registry parser owns beyond the group.
 registryExtras :: [String]
@@ -163,6 +163,9 @@ applicationPolicySpellingizer = describe "registry tokenizer" $ do
     it "refuses an unknown flag by name" $
         tokenizesRegistry ["cmd", "--frobnicate", "x"]
             `shouldBe` Left (BadValue "--frobnicate" "is not a flag singular reads")
+    it "refuses the retired fold switch as an unknown flag" $
+        tokenizesRegistry ["cmd", "--fold"]
+            `shouldBe` Left (BadValue "--fold" "is not a flag singular reads")
     it
         "takes --registry, which was once a renamed flag, as the registry's address"
         $ tokenizesRegistry ["cmd", "--registry", "x"]
@@ -181,8 +184,8 @@ siblingTokenizer = describe "sibling tokenizer" $ do
             tokenizesSibling ["cmd", flag, "value"]
                 `shouldBe` Right (["cmd"], [(flag, Just "value")])
     it "takes switches without values" $
-        tokenizesSibling ["cmd", "--fold"]
-            `shouldBe` Right (["cmd"], [("--fold", Nothing)])
+        tokenizesSibling ["cmd", "--preview"]
+            `shouldBe` Right (["cmd"], [("--preview", Nothing)])
     it "refuses the registry-only valued flag" $
         tokenizesSibling ["cmd", "--application-policy", "aa"]
             `shouldBe` Left
@@ -190,6 +193,9 @@ siblingTokenizer = describe "sibling tokenizer" $ do
     it "refuses an unknown flag by name" $
         tokenizesSibling ["cmd", "--frobnicate", "x"]
             `shouldBe` Left (BadValue "--frobnicate" "is not a flag singular reads")
+    it "refuses the retired fold switch as an unknown flag" $
+        tokenizesSibling ["cmd", "--fold"]
+            `shouldBe` Left (BadValue "--fold" "is not a flag singular reads")
 
 tracing :: Spec
 tracing = describe "tracing" $ do
