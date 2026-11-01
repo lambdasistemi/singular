@@ -31,7 +31,7 @@ the ticket owner accepts its slice.
 
 ## Pull request 5: refill after the tag
 
-- [ ] refill-after-tag: the row of the released version from its published archive, and the compatibility record regenerated from it.
+- [x] refill-after-tag: the row of the released version from its published archive, and the compatibility record regenerated from it.
 
 ## Fixes found while delivering
 
@@ -41,4 +41,4 @@ the ticket owner accepts its slice.
 
 ## Close-out
 
-- [ ] residuals-mapped: every limit and gap mapped to a ticket or a non-goal before the ticket is handed back.
+- [x] residuals-mapped: every limit and gap mapped to a ticket or a non-goal before the ticket is handed back.
