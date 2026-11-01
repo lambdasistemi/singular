@@ -20826,17 +20826,17 @@
    ]
   },
   "docs-compatibility/release-by-release-01": {
-   "audio_sha256": "7645ca53206e0177daec2cddc9335f2b3b1f4f9bceef081934ccb4a7a906683e",
+   "audio_sha256": "cf5b46c6e4c727b982f1f9d9b0791a78626adfaf943a6745a058474a385cc036",
    "characters": 226,
    "cost": 0.00022373999999999997,
-   "duration": 16.25,
+   "duration": 16.275,
    "index": 1,
-   "key": "65c390f0da2fa5bb3a0fa8ddf32ec7ee35bb9b898d2c90d3ee6f2c137e9e4778",
+   "key": "7dbae677770571b78a0e06b1876203144db63ee80009c8d15c33658b75974bf1",
    "page": "docs/compatibility.md",
    "pause_ms": 400,
    "section": "release-by-release",
-   "sent_text": "The table names 22 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
-   "text": "The table names 22 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
+   "sent_text": "The table names 23 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
+   "text": "The table names 23 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
    "words": [
     {
      "end": 0.25,
@@ -20854,239 +20854,239 @@
      "text": "names"
     },
     {
-     "end": 1.4,
+     "end": 1.425,
      "start": 0.9,
-     "text": "22"
+     "text": "23"
     },
     {
-     "end": 2.025,
-     "start": 1.4,
+     "end": 2.05,
+     "start": 1.425,
      "text": "releases"
     },
     {
-     "end": 2.15,
-     "start": 2.025,
+     "end": 2.175,
+     "start": 2.05,
      "text": "and"
     },
     {
-     "end": 2.375,
-     "start": 2.15,
+     "end": 2.4,
+     "start": 2.175,
      "text": "8"
     },
     {
-     "end": 2.65,
-     "start": 2.375,
+     "end": 2.675,
+     "start": 2.4,
      "text": "state"
     },
     {
-     "end": 3.8,
-     "start": 2.65,
+     "end": 3.825,
+     "start": 2.675,
      "text": "contracts"
     },
     {
-     "end": 4.0,
-     "start": 3.8,
+     "end": 4.025,
+     "start": 3.825,
      "text": "."
     },
     {
-     "end": 4.475,
-     "start": 4.2,
+     "end": 4.5,
+     "start": 4.225,
      "text": "Each"
     },
     {
-     "end": 4.9,
-     "start": 4.475,
+     "end": 4.925,
+     "start": 4.5,
      "text": "release"
     },
     {
-     "end": 5.137,
-     "start": 4.9,
+     "end": 5.162,
+     "start": 4.925,
      "text": "has"
     },
     {
-     "end": 5.4,
-     "start": 5.137,
+     "end": 5.425,
+     "start": 5.162,
      "text": "one"
     },
     {
-     "end": 5.75,
-     "start": 5.4,
+     "end": 5.775,
+     "start": 5.425,
      "text": "row"
     },
     {
-     "end": 5.85,
-     "start": 5.75,
+     "end": 5.875,
+     "start": 5.775,
      "text": ","
     },
     {
-     "end": 6.287,
-     "start": 5.85,
+     "end": 6.312,
+     "start": 5.875,
      "text": "oldest"
     },
     {
-     "end": 6.925,
-     "start": 6.287,
+     "end": 6.95,
+     "start": 6.312,
      "text": "first"
     },
     {
-     "end": 7.062,
-     "start": 6.925,
+     "end": 7.088,
+     "start": 6.95,
      "text": "."
     },
     {
-     "end": 7.175,
-     "start": 7.062,
+     "end": 7.2,
+     "start": 7.088,
      "text": "A"
     },
     {
-     "end": 7.6,
-     "start": 7.175,
+     "end": 7.625,
+     "start": 7.2,
      "text": "release"
     },
     {
-     "end": 7.713,
-     "start": 7.6,
+     "end": 7.738,
+     "start": 7.625,
      "text": "the"
     },
     {
-     "end": 8.125,
-     "start": 7.713,
+     "end": 8.15,
+     "start": 7.738,
      "text": "table"
     },
     {
-     "end": 8.45,
-     "start": 8.125,
+     "end": 8.475,
+     "start": 8.15,
      "text": "leaves"
     },
     {
-     "end": 8.725,
-     "start": 8.45,
+     "end": 8.75,
+     "start": 8.475,
      "text": "out"
     },
     {
-     "end": 8.875,
-     "start": 8.725,
+     "end": 8.9,
+     "start": 8.75,
      "text": "is"
     },
     {
-     "end": 9.3,
-     "start": 8.875,
+     "end": 9.325,
+     "start": 8.9,
      "text": "listed"
     },
     {
-     "end": 9.438,
-     "start": 9.3,
+     "end": 9.462,
+     "start": 9.325,
      "text": "with"
     },
     {
-     "end": 9.625,
-     "start": 9.438,
+     "end": 9.65,
+     "start": 9.462,
      "text": "its"
     },
     {
-     "end": 10.65,
-     "start": 9.625,
+     "end": 10.675,
+     "start": 9.65,
      "text": "reason"
     },
     {
-     "end": 10.875,
-     "start": 10.65,
+     "end": 10.9,
+     "start": 10.675,
      "text": ":"
     },
     {
-     "end": 11.25,
-     "start": 11.075,
+     "end": 11.275,
+     "start": 11.1,
      "text": "its"
     },
     {
-     "end": 11.825,
-     "start": 11.25,
+     "end": 11.85,
+     "start": 11.275,
      "text": "contract"
     },
     {
-     "end": 11.975,
-     "start": 11.825,
+     "end": 12.0,
+     "start": 11.85,
      "text": "is"
     },
     {
-     "end": 12.2,
-     "start": 11.975,
+     "end": 12.225,
+     "start": 12.0,
      "text": "not"
     },
     {
-     "end": 12.85,
-     "start": 12.2,
+     "end": 12.875,
+     "start": 12.225,
      "text": "recorded"
     },
     {
-     "end": 12.95,
-     "start": 12.85,
+     "end": 12.975,
+     "start": 12.875,
      "text": ","
     },
     {
-     "end": 13.137,
-     "start": 12.95,
+     "end": 13.163,
+     "start": 12.975,
      "text": "so"
     },
     {
-     "end": 13.4,
-     "start": 13.137,
+     "end": 13.425,
+     "start": 13.163,
      "text": "no"
     },
     {
-     "end": 13.825,
-     "start": 13.4,
+     "end": 13.85,
+     "start": 13.425,
      "text": "release"
     },
     {
-     "end": 13.975,
-     "start": 13.825,
+     "end": 14.0,
+     "start": 13.85,
      "text": "is"
     },
     {
-     "end": 14.3,
-     "start": 13.975,
+     "end": 14.325,
+     "start": 14.0,
      "text": "known"
     },
     {
-     "end": 14.438,
-     "start": 14.3,
+     "end": 14.462,
+     "start": 14.325,
      "text": "to"
     },
     {
-     "end": 14.712,
-     "start": 14.438,
+     "end": 14.738,
+     "start": 14.462,
      "text": "serve"
     },
     {
-     "end": 14.85,
-     "start": 14.712,
+     "end": 14.875,
+     "start": 14.738,
      "text": "its"
     },
     {
-     "end": 16.05,
-     "start": 14.85,
+     "end": 16.075,
+     "start": 14.875,
      "text": "registries"
     },
     {
-     "end": 16.25,
-     "start": 16.05,
+     "end": 16.275,
+     "start": 16.075,
      "text": "."
     }
    ]
   },
   "docs-compatibility/release-by-release-02": {
-   "audio_sha256": "180ec22ce22f18523fb9347a91ffa2bb153de0a72f0c6f3239417cb83472041f",
+   "audio_sha256": "c2bf0bebb9b24c88f69275196bfaa2078dcee233ff693eaaafe70676fca00366",
    "characters": 62,
    "cost": 6.138e-05,
    "duration": 4.325,
    "index": 2,
-   "key": "ffdf5cc086d0296dbba3b2f66425b763970bca235d2bd9af4931d5917c4f26fd",
+   "key": "d5b509b82216f73a48b3758114ab6ac82a8f652fa49ada3d8a7c4d1d443318bc",
    "page": "docs/compatibility.md",
    "pause_ms": 400,
    "section": "release-by-release",
-   "sent_text": "This release serves the registries of 3 releases listed above.",
-   "text": "This release serves the registries of 3 releases listed above.",
+   "sent_text": "This release serves the registries of 4 releases listed above.",
+   "text": "This release serves the registries of 4 releases listed above.",
    "words": [
     {
      "end": 0.4,
@@ -21104,24 +21104,24 @@
      "text": "serves"
     },
     {
-     "end": 1.35,
+     "end": 1.325,
      "start": 1.225,
      "text": "the"
     },
     {
-     "end": 1.975,
-     "start": 1.35,
+     "end": 1.95,
+     "start": 1.325,
      "text": "registries"
     },
     {
-     "end": 2.138,
-     "start": 1.975,
+     "end": 2.112,
+     "start": 1.95,
      "text": "of"
     },
     {
      "end": 2.4,
-     "start": 2.138,
-     "text": "3"
+     "start": 2.112,
+     "text": "4"
     },
     {
      "end": 2.925,

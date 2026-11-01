@@ -37,11 +37,11 @@
       "pause": 500
     },
     {
-      "text": "The table names 22 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
+      "text": "The table names 23 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
       "pause": 400
     },
     {
-      "text": "This release serves the registries of 3 releases listed above.",
+      "text": "This release serves the registries of 4 releases listed above.",
       "pause": 400
     }
   ],
@@ -77,6 +77,6 @@
   ],
   "_source": {
     "file": "compatibility.md",
-    "sha256": "29df635b6a75aefd385c05eb3c978b77338fcdfa0ea34f2ff0d1b61daca4a651"
+    "sha256": "f981f73501c28763c307ad30be614b90e64ecfd115c8ecf70fb1adbe1c53ce35"
   }
 }
