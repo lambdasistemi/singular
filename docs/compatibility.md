@@ -21,7 +21,7 @@ Every row is computed from the release table, which the releases after v0.15.0 c
 
 | Where the rows come from | Value |
 |---|---|
-| The release table, `offchain/data/contracts/state-contracts.json`, SHA-256 | `19e0c80f4df039d9448a6b480eecd0a3b176b6bd32ae10e6e74c10fe58400de2` |
+| The release table, `offchain/data/contracts/state-contracts.json`, SHA-256 | `5d3b98bc63267913772bf902751e47402f3cd673f97b8a47900a6e9fb34d4636` |
 | Application policy of the request validator in the blueprint this release carries | `67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7` |
 | State contract these commands derive | `499291dbc77fb84b590e4f2d728788aa06191627a2c5c95b6bc4d679` |
 
@@ -29,7 +29,7 @@ The commands of this release print the same answer. The off-chain test suite com
 
 ## Release by release
 
-The table names 22 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.
+The table names 23 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.
 
 | Release | State contract | Registries made by it are served by |
 |---|---|---|
@@ -55,8 +55,9 @@ The table names 22 releases and 8 state contracts. Each release has one row, old
 | v0.17.0 | `499291dbc77fb84b590e4f2d728788aa06191627a2c5c95b6bc4d679` | this release |
 | v0.18.0 | `499291dbc77fb84b590e4f2d728788aa06191627a2c5c95b6bc4d679` | this release |
 | v0.19.0 | `499291dbc77fb84b590e4f2d728788aa06191627a2c5c95b6bc4d679` | this release |
+| v1.0.0 | `499291dbc77fb84b590e4f2d728788aa06191627a2c5c95b6bc4d679` | this release |
 
-This release serves the registries of 3 releases listed above.
+This release serves the registries of 4 releases listed above.
 
 ## Contracts with no release
 
@@ -72,7 +73,7 @@ A registry made for an application has a state policy that applies the state pro
 
 | Applied state policy | Application policy | Singular releases | Application releases | Registries made by it are served by |
 |---|---|---|---|---|
-| `499291dbc77fb84b590e4f2d728788aa06191627a2c5c95b6bc4d679` | `67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7` | v0.17.0, v0.18.0, v0.19.0 | v0.17.0, v0.18.0, v0.19.0 | this release |
+| `499291dbc77fb84b590e4f2d728788aa06191627a2c5c95b6bc4d679` | `67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7` | v0.17.0, v0.18.0, v0.19.0, v1.0.0 | v0.17.0, v0.18.0, v0.19.0, v1.0.0 | this release |
 
 ## Regenerate this page
 

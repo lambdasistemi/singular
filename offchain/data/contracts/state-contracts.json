@@ -21,7 +21,8 @@
     "v0.17.0": "dc616f6e8361be3ff4c9ab6df8a4d8cd4a8842085326a4c03e341ac4b4250e86",
     "v0.16.0": "1a1ad9647da8248d1c0fb2920647245a1daa8da1451eb8bb8a0f805cb96cfd56",
     "v0.18.0": "a620dd2a65e42a705e07847bad0b5ea88851f9888c5382bad3e0d39430fc137e",
-    "v0.19.0": "8285c623f08e4df9240ca9ebbd4e40b2ad3483d74bb3eb94af9d99e608e9d63d"
+    "v0.19.0": "8285c623f08e4df9240ca9ebbd4e40b2ad3483d74bb3eb94af9d99e608e9d63d",
+    "v1.0.0": "3e2d32f90df20ff46c86251b65880d9f73fcf278f5eb48fb5ae47a094fdbeccb"
   },
   "left-out": [
     {
@@ -91,12 +92,14 @@
       "singular-releases": [
         "v0.17.0",
         "v0.18.0",
-        "v0.19.0"
+        "v0.19.0",
+        "v1.0.0"
       ],
       "application-releases": [
         "v0.17.0",
         "v0.18.0",
-        "v0.19.0"
+        "v0.19.0",
+        "v1.0.0"
       ]
     }
   ]

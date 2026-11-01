@@ -659,15 +659,15 @@
     "index": 1,
     "name": "docs-compatibility/release-by-release-01",
     "pause_ms": 400,
-    "text": "The table names 22 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
-    "v": "7645ca53206e"
+    "text": "The table names 23 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
+    "v": "cf5b46c6e4c7"
    },
    {
     "index": 2,
     "name": "docs-compatibility/release-by-release-02",
     "pause_ms": 400,
-    "text": "This release serves the registries of 3 releases listed above.",
-    "v": "180ec22ce22f"
+    "text": "This release serves the registries of 4 releases listed above.",
+    "v": "c2bf0bebb9b2"
    }
   ],
   "which-release-serves-my-registry": [
