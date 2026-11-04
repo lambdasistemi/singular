@@ -1907,15 +1907,22 @@
     "index": 3,
     "name": "docs-folding-requests/discover-and-fold-03",
     "pause_ms": 400,
-    "text": "To cap discovery, give the maximum number you want in --limit. The cap does not promise that many will fit.",
-    "v": "9fb3cd472b9b"
+    "text": "Koios lists a new request up to about two minutes after it is booked. A fold run sooner can find nothing yet, and then refuses with \"there is nothing to fold yet\", which says so. Retry after two minutes, or name the request with --pending to fold it at once.",
+    "v": "6c3609e3a137"
    },
    {
     "index": 4,
     "name": "docs-folding-requests/discover-and-fold-04",
     "pause_ms": 400,
+    "text": "To cap discovery, give the maximum number you want in --limit. The cap does not promise that many will fit.",
+    "v": "e6c9e3568b32"
+   },
+   {
+    "index": 5,
+    "name": "docs-folding-requests/discover-and-fold-05",
+    "pause_ms": 400,
     "text": "Only exceeding a transaction size, memory or steps limit permits a shorter prefix. A failed public read, failed registry replay or another construction error stops with its own reason. It never becomes an empty or shorter answer. The current network decides what fits; the measured workload below is not a fixed cap built into this command.",
-    "v": "f9959c6d673c"
+    "v": "511eaa8ba346"
    }
   ],
   "fold-pending-requests-from-public-data": [

@@ -272,7 +272,8 @@ renderRefusal = \case
     TrieRefused failure ->
         "the public history of the registry cannot be replayed into its trie: "
             <> show failure
-    NothingToFold -> "there is nothing to fold"
+    NothingToFold ->
+        "there is nothing to fold yet: Koios lists a new request up to about two minutes after it is booked, so retry then or name the request with --pending"
     DuplicateRequest ref ->
         "the pending registration " <> showRef ref <> " is named twice"
     DuplicateKey key ->

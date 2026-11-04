@@ -20,8 +20,10 @@ foldable request for each key is kept; later ones are skipped as duplicates.
 The greatest prefix of foldable requests fitting transaction size, memory and
 steps is built; --limit caps its request count. Skipped requests are never
 counted as left. If none can fold, the command refuses with nothing to fold
-and still lists the skipped requests. Failed reads and other construction
-failures stop the fold with their own reason.
+and still lists the skipped requests. Koios lists a new request up to about
+two minutes after it is booked, so a fold run sooner can find nothing yet;
+name the request with --pending to fold it at once. Failed reads and other
+construction failures stop the fold with their own reason.
 
 A registration keeps its committed holding and deposit; its remaining value is
 the folder's. A termination burns its approval and active token and pays its

@@ -43,6 +43,11 @@ deposit its holding must keep. A termination's take is the request's whole
 held ADA. Your wallet receives the transaction's change and pays its fee;
 the gross take is not the same as profit after that fee.
 
+Koios lists a new request up to about two minutes after it is booked. A fold
+run sooner can find nothing yet, and then refuses with "there is nothing to fold
+yet", which says so. Retry after two minutes, or name the request with
+`--pending` to fold it at once.
+
 To cap discovery, give the maximum number you want in `--limit`. The cap does
 not promise that many will fit.
 
@@ -76,7 +81,7 @@ open-datum fold --blueprint plutus.json \
 | A request of another registry in a named batch | Refused, naming the request and registry |
 | Requests with the same key, or the same pending reference repeated | Refused, naming the key or request |
 | A named batch exceeds a network limit | Refused with that limit; no request is silently dropped |
-| No request can fold | Nothing to fold; discovered skips are still named |
+| No request can fold | Nothing to fold yet, with the Koios listing delay and `--pending` named; discovered skips are still named |
 | A public read fails or is incomplete | Unavailable, naming the read; no empty answer is claimed |
 | A constructed transaction moves anything else under the state policy | Rejected by the state script |
 
