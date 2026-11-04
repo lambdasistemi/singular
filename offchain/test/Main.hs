@@ -7,6 +7,7 @@ import Singular.CLI.FlagGroupSpec qualified (spec)
 import Singular.CLI.HelpSnapshotSpec qualified (spec)
 import Singular.CLI.InspectSpec qualified (spec)
 import Singular.CLI.JournalTransitionsSpec qualified (spec)
+import Singular.CLI.NothingToFoldSpec qualified (spec)
 import Singular.CLI.OneOutputCreateSpec qualified (spec)
 import Singular.CLI.ParserCorpusSpec qualified (spec)
 import Singular.CLI.PayloadSpec qualified (spec)
@@ -171,6 +172,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.FailureSentence" [Cli])
         Singular.CLI.FailureSentenceSpec.spec
+    describe
+        (tagged "Singular.CLI.NothingToFold" [Cli])
+        Singular.CLI.NothingToFoldSpec.spec
     describe
         (tagged "Singular.CLI.FlagGroup" [Cli])
         Singular.CLI.FlagGroupSpec.spec

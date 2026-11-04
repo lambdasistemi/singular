@@ -60561,11 +60561,316 @@
    ]
   },
   "docs-folding-requests/discover-and-fold-03": {
-   "audio_sha256": "9fb3cd472b9bcb8e1514560164f6cc0915430044fdba75b7d61b8e1ac9553813",
+   "audio_sha256": "6c3609e3a13773970da98d1f6229cf45d64f7d54e862f5ef99b8601b22db9e47",
+   "characters": 258,
+   "cost": 0.00025541999999999996,
+   "duration": 16.55,
+   "index": 3,
+   "key": "0c827b66ca7378ee563f865b35b34158da4fb83e922bbec107387092a8afd9cf",
+   "page": "docs/folding-requests.md",
+   "pause_ms": 400,
+   "section": "discover-and-fold",
+   "sent_text": "Koios lists a new request up to about two minutes after it is booked. A fold run sooner can find nothing yet, and then refuses with \"there is nothing to fold yet\", which says so. Retry after two minutes, or name the request with --pending to fold it at once.",
+   "text": "Koios lists a new request up to about two minutes after it is booked. A fold run sooner can find nothing yet, and then refuses with \"there is nothing to fold yet\", which says so. Retry after two minutes, or name the request with --pending to fold it at once.",
+   "words": [
+    {
+     "end": 0.65,
+     "start": 0.2,
+     "text": "Koios"
+    },
+    {
+     "end": 0.887,
+     "start": 0.65,
+     "text": "lists"
+    },
+    {
+     "end": 0.988,
+     "start": 0.887,
+     "text": "a"
+    },
+    {
+     "end": 1.2,
+     "start": 0.988,
+     "text": "new"
+    },
+    {
+     "end": 1.725,
+     "start": 1.2,
+     "text": "request"
+    },
+    {
+     "end": 1.925,
+     "start": 1.725,
+     "text": "up"
+    },
+    {
+     "end": 2.075,
+     "start": 1.925,
+     "text": "to"
+    },
+    {
+     "end": 2.412,
+     "start": 2.075,
+     "text": "about"
+    },
+    {
+     "end": 2.625,
+     "start": 2.412,
+     "text": "two"
+    },
+    {
+     "end": 2.95,
+     "start": 2.625,
+     "text": "minutes"
+    },
+    {
+     "end": 3.213,
+     "start": 2.95,
+     "text": "after"
+    },
+    {
+     "end": 3.287,
+     "start": 3.213,
+     "text": "it"
+    },
+    {
+     "end": 3.425,
+     "start": 3.287,
+     "text": "is"
+    },
+    {
+     "end": 4.25,
+     "start": 3.425,
+     "text": "booked"
+    },
+    {
+     "end": 4.45,
+     "start": 4.25,
+     "text": "."
+    },
+    {
+     "end": 4.738,
+     "start": 4.65,
+     "text": "A"
+    },
+    {
+     "end": 5.125,
+     "start": 4.738,
+     "text": "fold"
+    },
+    {
+     "end": 5.438,
+     "start": 5.125,
+     "text": "run"
+    },
+    {
+     "end": 5.8,
+     "start": 5.438,
+     "text": "sooner"
+    },
+    {
+     "end": 6.0,
+     "start": 5.8,
+     "text": "can"
+    },
+    {
+     "end": 6.3,
+     "start": 6.0,
+     "text": "find"
+    },
+    {
+     "end": 6.675,
+     "start": 6.3,
+     "text": "nothing"
+    },
+    {
+     "end": 6.975,
+     "start": 6.675,
+     "text": "yet"
+    },
+    {
+     "end": 7.05,
+     "start": 6.975,
+     "text": ","
+    },
+    {
+     "end": 7.162,
+     "start": 7.05,
+     "text": "and"
+    },
+    {
+     "end": 7.325,
+     "start": 7.162,
+     "text": "then"
+    },
+    {
+     "end": 8.0,
+     "start": 7.325,
+     "text": "refuses"
+    },
+    {
+     "end": 8.275,
+     "start": 8.0,
+     "text": "with"
+    },
+    {
+     "end": 8.325,
+     "start": 8.275,
+     "text": "\""
+    },
+    {
+     "end": 8.5,
+     "start": 8.325,
+     "text": "there"
+    },
+    {
+     "end": 8.663,
+     "start": 8.5,
+     "text": "is"
+    },
+    {
+     "end": 9.05,
+     "start": 8.663,
+     "text": "nothing"
+    },
+    {
+     "end": 9.188,
+     "start": 9.05,
+     "text": "to"
+    },
+    {
+     "end": 9.575,
+     "start": 9.188,
+     "text": "fold"
+    },
+    {
+     "end": 9.875,
+     "start": 9.575,
+     "text": "yet"
+    },
+    {
+     "end": 9.9,
+     "start": 9.875,
+     "text": "\""
+    },
+    {
+     "end": 9.938,
+     "start": 9.9,
+     "text": ","
+    },
+    {
+     "end": 10.125,
+     "start": 9.938,
+     "text": "which"
+    },
+    {
+     "end": 10.363,
+     "start": 10.125,
+     "text": "says"
+    },
+    {
+     "end": 11.25,
+     "start": 10.363,
+     "text": "so"
+    },
+    {
+     "end": 11.5,
+     "start": 11.25,
+     "text": "."
+    },
+    {
+     "end": 12.225,
+     "start": 11.7,
+     "text": "Retry"
+    },
+    {
+     "end": 12.538,
+     "start": 12.225,
+     "text": "after"
+    },
+    {
+     "end": 12.75,
+     "start": 12.538,
+     "text": "two"
+    },
+    {
+     "end": 13.175,
+     "start": 12.75,
+     "text": "minutes"
+    },
+    {
+     "end": 13.25,
+     "start": 13.175,
+     "text": ","
+    },
+    {
+     "end": 13.4,
+     "start": 13.25,
+     "text": "or"
+    },
+    {
+     "end": 13.587,
+     "start": 13.4,
+     "text": "name"
+    },
+    {
+     "end": 13.675,
+     "start": 13.587,
+     "text": "the"
+    },
+    {
+     "end": 14.188,
+     "start": 13.675,
+     "text": "request"
+    },
+    {
+     "end": 14.363,
+     "start": 14.188,
+     "text": "with"
+    },
+    {
+     "end": 14.775,
+     "start": 14.363,
+     "text": "pending"
+    },
+    {
+     "end": 14.913,
+     "start": 14.775,
+     "text": "to"
+    },
+    {
+     "end": 15.238,
+     "start": 14.913,
+     "text": "fold"
+    },
+    {
+     "end": 15.325,
+     "start": 15.238,
+     "text": "it"
+    },
+    {
+     "end": 15.425,
+     "start": 15.325,
+     "text": "at"
+    },
+    {
+     "end": 16.35,
+     "start": 15.425,
+     "text": "once"
+    },
+    {
+     "end": 16.55,
+     "start": 16.35,
+     "text": "."
+    }
+   ]
+  },
+  "docs-folding-requests/discover-and-fold-04": {
+   "audio_sha256": "e6c9e3568b320075ce09425de6144a4a808ca8d6561a4a5b16f2fffdca9e6c88",
    "characters": 107,
    "cost": 0.00010593,
    "duration": 6.675,
-   "index": 3,
+   "index": 4,
    "key": "0fa41c6e321b5b53e05eb357ddcd2e702809634dbd1dd35e1ef96d93c9891352",
    "page": "docs/folding-requests.md",
    "pause_ms": 400,
@@ -60690,12 +60995,12 @@
     }
    ]
   },
-  "docs-folding-requests/discover-and-fold-04": {
-   "audio_sha256": "f9959c6d673c3fa0a49449bd5132e49870e516e27220258d3a5e503cd5af323f",
+  "docs-folding-requests/discover-and-fold-05": {
+   "audio_sha256": "511eaa8ba3464be047b8508407a7db1017524d3bb13684071d023f8ac543bbd8",
    "characters": 340,
    "cost": 0.00033659999999999994,
    "duration": 22.925,
-   "index": 4,
+   "index": 5,
    "key": "d81437a938036221abd95d2febac7acf073243a68e596b8839cce86e2dd44ee2",
    "page": "docs/folding-requests.md",
    "pause_ms": 400,

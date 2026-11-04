@@ -27,6 +27,10 @@
       "pause": 400
     },
     {
+      "text": "Koios lists a new request up to about two minutes after it is booked. A fold run sooner can find nothing yet, and then refuses with \"there is nothing to fold yet\", which says so. Retry after two minutes, or name the request with --pending to fold it at once.",
+      "pause": 400
+    },
+    {
       "text": "To cap discovery, give the maximum number you want in --limit. The cap does not promise that many will fit.",
       "pause": 400
     },
@@ -141,6 +145,6 @@
   ],
   "_source": {
     "file": "folding-requests.md",
-    "sha256": "ad0abfb0099d50c0689be6b8c659602259fcb8e26a28a287d2d514056937dcca"
+    "sha256": "2088fe9c1bb05710e7aaa02eb427ea1b7f73c673f4a2b51a83944a6929649d82"
   }
 }
