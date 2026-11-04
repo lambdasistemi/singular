@@ -20826,17 +20826,17 @@
    ]
   },
   "docs-compatibility/release-by-release-01": {
-   "audio_sha256": "cf5b46c6e4c727b982f1f9d9b0791a78626adfaf943a6745a058474a385cc036",
+   "audio_sha256": "1f24efb6bef59799769d550739fcb24300d7347c0e656e567be80f395747b5de",
    "characters": 226,
    "cost": 0.00022373999999999997,
    "duration": 16.275,
    "index": 1,
-   "key": "7dbae677770571b78a0e06b1876203144db63ee80009c8d15c33658b75974bf1",
+   "key": "a10edea999e109f3c3d92cc740be455847c3fe7c7392d920c1db74558a05b30c",
    "page": "docs/compatibility.md",
    "pause_ms": 400,
    "section": "release-by-release",
-   "sent_text": "The table names 23 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
-   "text": "The table names 23 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
+   "sent_text": "The table names 24 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
+   "text": "The table names 24 releases and 8 state contracts. Each release has one row, oldest first. A release the table leaves out is listed with its reason: its contract is not recorded, so no release is known to serve its registries.",
    "words": [
     {
      "end": 0.25,
@@ -20856,7 +20856,7 @@
     {
      "end": 1.425,
      "start": 0.9,
-     "text": "23"
+     "text": "24"
     },
     {
      "end": 2.05,
@@ -21076,17 +21076,17 @@
    ]
   },
   "docs-compatibility/release-by-release-02": {
-   "audio_sha256": "c2bf0bebb9b24c88f69275196bfaa2078dcee233ff693eaaafe70676fca00366",
+   "audio_sha256": "ef958b29482d6246d3ca513a2518ecf224bb802ed0e1f40e0cb34d503155e749",
    "characters": 62,
    "cost": 6.138e-05,
-   "duration": 4.325,
+   "duration": 4.425,
    "index": 2,
-   "key": "d5b509b82216f73a48b3758114ab6ac82a8f652fa49ada3d8a7c4d1d443318bc",
+   "key": "79ff6de99fb0c4474fc50cbfd91d0f25696d9ca8803c4eb9ba9c1abcb3c3a555",
    "page": "docs/compatibility.md",
    "pause_ms": 400,
    "section": "release-by-release",
-   "sent_text": "This release serves the registries of 4 releases listed above.",
-   "text": "This release serves the registries of 4 releases listed above.",
+   "sent_text": "This release serves the registries of 5 releases listed above.",
+   "text": "This release serves the registries of 5 releases listed above.",
    "words": [
     {
      "end": 0.4,
@@ -21104,43 +21104,43 @@
      "text": "serves"
     },
     {
-     "end": 1.325,
+     "end": 1.35,
      "start": 1.225,
      "text": "the"
     },
     {
-     "end": 1.95,
-     "start": 1.325,
+     "end": 1.975,
+     "start": 1.35,
      "text": "registries"
     },
     {
-     "end": 2.112,
-     "start": 1.95,
+     "end": 2.15,
+     "start": 1.975,
      "text": "of"
     },
     {
-     "end": 2.4,
-     "start": 2.112,
-     "text": "4"
+     "end": 2.513,
+     "start": 2.15,
+     "text": "5"
     },
     {
-     "end": 2.925,
-     "start": 2.4,
+     "end": 3.025,
+     "start": 2.513,
      "text": "releases"
     },
     {
-     "end": 3.237,
-     "start": 2.925,
+     "end": 3.338,
+     "start": 3.025,
      "text": "listed"
     },
     {
-     "end": 4.125,
-     "start": 3.237,
+     "end": 4.225,
+     "start": 3.338,
      "text": "above"
     },
     {
-     "end": 4.325,
-     "start": 4.125,
+     "end": 4.425,
+     "start": 4.225,
      "text": "."
     }
    ]

@@ -1,7 +1,7 @@
 {
   "table": {
     "file": "offchain/data/contracts/state-contracts.json",
-    "sha256": "5d3b98bc63267913772bf902751e47402f3cd673f97b8a47900a6e9fb34d4636"
+    "sha256": "ba04a484ce9b40171cd7dd4d9eeb7742e810884b78941ff67e088918ff3af1d1"
   },
   "last-release-without-the-table": "v0.15.0",
   "packaged-application-policy": "67bb50e5aab678b9955e1d8981050a14e0f93da912b3a8b4a7161ca7",
@@ -186,6 +186,13 @@
       "served-by": {
         "kind": "this-release"
       }
+    },
+    {
+      "release": "v1.1.0",
+      "state-contract": "499291dbc77fb84b590e4f2d728788aa06191627a2c5c95b6bc4d679",
+      "served-by": {
+        "kind": "this-release"
+      }
     }
   ],
   "contracts-without-release": [
@@ -205,13 +212,15 @@
         "v0.17.0",
         "v0.18.0",
         "v0.19.0",
-        "v1.0.0"
+        "v1.0.0",
+        "v1.1.0"
       ],
       "application-releases": [
         "v0.17.0",
         "v0.18.0",
         "v0.19.0",
-        "v1.0.0"
+        "v1.0.0",
+        "v1.1.0"
       ],
       "served-by": {
         "kind": "this-release"
