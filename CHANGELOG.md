@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/lambdasistemi/singular/compare/v1.1.0...v1.2.0) (2026-11-04)
+
+
+### Features
+
+* record release 1.1.0 in the packaged contract table ([8280da7](https://github.com/lambdasistemi/singular/commit/8280da7b53f992daa2c4e919cdd7177d2345bffb))
+* record release 1.1.0 in the packaged contract table ([96fbf5d](https://github.com/lambdasistemi/singular/commit/96fbf5d925f3c2f5d8163998930bfba45073e6e3))
+
 ## [1.1.0](https://github.com/lambdasistemi/singular/compare/v1.0.0...v1.1.0) (2026-11-04)
 
 
